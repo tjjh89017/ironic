@@ -39,6 +39,10 @@ if is_service_enabled ir-api ir-cond; then
                 create_ironic_accounts
             fi
 
+            if [[ "$IRONIC_TORRENT_PROVISIONING_ENABLED" == "True" ]] ; then
+                configure_ironic_qbittorrent
+            fi
+
         elif [[ "$2" == "extra" ]]; then
         # stack/extra - Called near the end after layer 1 and 2 services have
         # been started.
@@ -64,6 +68,10 @@ if is_service_enabled ir-api ir-cond; then
             start_ironic
             prepare_baremetal_basic_ops
 
+            if [[ "$IRONIC_TORRENT_PROVISIONING_ENABLED" == "True" ]] ; then
+                start_ironic_qbittorrent
+            fi
+
         elif [[ "$2" == "test-config" ]]; then
         # stack/test-config - Called at the end of devstack used to configure tempest
         # or any other test environments
@@ -80,6 +88,9 @@ if is_service_enabled ir-api ir-cond; then
         stop_ironic
         cleanup_ironic_provision_network
         cleanup_baremetal_basic_ops
+        if [[ "$IRONIC_TORRENT_PROVISIONING_ENABLED" == "True" ]] ; then
+                stop_ironic_qbittorrent
+        fi
     fi
 
     if [[ "$1" == "clean" ]]; then

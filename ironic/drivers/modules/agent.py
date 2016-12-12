@@ -196,6 +196,7 @@ class AgentDeployMixin(agent_base_vendor.AgentDeployMixin):
             'container_format': node.instance_info.get(
                 'image_container_format'),
             'stream_raw_images': CONF.agent.stream_raw_images,
+            'torrent': node.instance_info.get('image_torrent')
         }
 
         proxies = {}

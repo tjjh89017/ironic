@@ -96,6 +96,8 @@ opts = [
                 help=_('Whether to upload the config drive to object store. '
                        'Set this option to True to store config drive '
                        'in a swift endpoint.')),
+    cfg.ListOpt('torrent_trackers',
+                help=_("List of torrent tracker's URLs.")),
 ]
 
 

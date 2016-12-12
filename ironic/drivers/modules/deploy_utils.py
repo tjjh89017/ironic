@@ -1104,9 +1104,47 @@ def build_instance_info_for_deploy(task):
         image_info = glance.show(image_source)
         LOG.debug('Got image info: %(info)s for node %(node)s.',
                   {'info': image_info, 'node': node.uuid})
-        swift_temp_url = glance.swift_temp_url(image_info)
-        validate_image_url(swift_temp_url, secret=True)
-        instance_info['image_url'] = swift_temp_url
+        torrent_file = image_info['properties'].get('torrent_file')
+        image_temp_url = glance.swift_temp_url(image_info)
+
+        if torrent_file:
+            if not service_utils.is_glance_image(torrent_file):
+                raise exception.Invalid('Unacceptable BitTorrent reference,'
+                                        'only image id is supported.')
+
+            torrent_image_info = glance.show(torrent_file)
+            torrent_file_url = glance.swift_temp_url(torrent_image_info)
+            torrent_file_info = {
+                'id': torrent_image_info['id'],
+                'checksum': torrent_image_info['checksum'],
+                'urls': [torrent_file_url]
+            }
+
+            instance_info['image_torrent'] = {
+                'info': torrent_file_info,
+                'trackers': CONF.deploy.torrent_trackers
+            }
+
+
+        torrent_file = image_info['properties'].get('torrent_file')
+        image_temp_url = glance.swift_temp_url(image_info)
+
+        if torrent_file:
+
+            torrent_image_info = glance.show(torrent_file)
+            torrent_file_info = {
+                'id': torrent_image_info['id'],
+                'image_checksum': torrent_image_info['checksum']
+            }
+
+            torrent_file_url = glance.swift_temp_url(image_info)
+            instance_info['image_torrent'] = {
+                'info': torrent_file_info,
+                'url': torrent_file_url,
+                'trackers': CONF.deploy.torrent_trackers
+            }
+
+        instance_info['image_url'] = image_temp_url
         instance_info['image_checksum'] = image_info['checksum']
         instance_info['image_disk_format'] = image_info['disk_format']
         instance_info['image_container_format'] = (

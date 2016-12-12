@@ -193,6 +193,15 @@ IRONIC_DEFAULT_VENDOR_INTERFACE=${IRONIC_DEFAULT_VENDOR_INTERFACE:-}
 # because it is not consistently supported/working across
 # all gate infrastructure providers.
 if [[ "$IRONIC_VM_ENGINE" == "auto" ]]; then
+# Set up bittorrent provisioning
+IRONIC_TORRENT_PROVISIONING_ENABLED=${IRONIC_TORRENT_PROVISIONING_ENABLED:-False}
+IRONIC_TORRENT_TRACKER_CONF_FILE=${IRONIC_TORRENT_TRACKER_CONF_FILE:- $HOME/.config/qBittorrent/qBittorrent.conf}
+IRONIC_TORRENT_TRACKER_PORT=${IRONIC_TORRENT_TRACKER_PORT:-9000}
+
+# NOTE(vsaienko) nova already pick right libvirt type at
+# https://review.openstack.org/#/c/31177/4/lib/nova@240
+# pick hardware virtualization if possible while it is not set explicitly
+if [[ -z "$IRONIC_VM_ENGINE" ]]; then
     sudo modprobe kvm || true
     if [ ! -e /dev/kvm ]; then
         echo "WARNING: Switching to QEMU"
@@ -2398,6 +2407,31 @@ function upload_baremetal_ironic_deploy {
         IRONIC_DEPLOY_KERNEL_ID=$(openstack image show $ironic_deploy_kernel_name -f value -c id)
         IRONIC_DEPLOY_RAMDISK_ID=$(openstack image show $ironic_deploy_ramdisk_name -f value -c id)
     fi
+}
+
+# Configure bittorrent tracker
+function start_ironic_qbittorrent {
+    run_process ironic_qbittorrent "sudo qbittorrent-nox -d"
+}
+
+function configure_ironic_qbittorrent {
+    mkdir -p $(dirname $IRONIC_TORRENT_TRACKER_CONF_FILE)
+    cat > $IRONIC_TORRENT_TRACKER_CONF_FILE <<EOF
+[LegalNotice]
+Accepted=true
+
+[Preferences]
+General\Locale=en_US
+Advanced\trackerEnabled=true
+Advanced\trackerPort=$IRONIC_TORRENT_TRACKER_PORT
+EOF
+    # Configure Ironic with tracker
+    iniset $IRONIC_CONF_FILE deploy torrent_trackers "http://$SERVICE_HOST:$IRONIC_TORRENT_TRACKER_PORT"
+}
+
+
+function stop_ironic_qbittorrent {
+    stop_process ironic_qbittorrent
 }
 
 function prepare_baremetal_basic_ops {
