@@ -192,7 +192,6 @@ IRONIC_DEFAULT_VENDOR_INTERFACE=${IRONIC_DEFAULT_VENDOR_INTERFACE:-}
 # (aka nested kvm). We do not enable it in the infra gates
 # because it is not consistently supported/working across
 # all gate infrastructure providers.
-if [[ "$IRONIC_VM_ENGINE" == "auto" ]]; then
 # Set up bittorrent provisioning
 IRONIC_TORRENT_PROVISIONING_ENABLED=${IRONIC_TORRENT_PROVISIONING_ENABLED:-False}
 IRONIC_TORRENT_TRACKER_CONF_FILE=${IRONIC_TORRENT_TRACKER_CONF_FILE:- $HOME/.config/qBittorrent/qBittorrent.conf}
@@ -201,7 +200,7 @@ IRONIC_TORRENT_TRACKER_PORT=${IRONIC_TORRENT_TRACKER_PORT:-9000}
 # NOTE(vsaienko) nova already pick right libvirt type at
 # https://review.openstack.org/#/c/31177/4/lib/nova@240
 # pick hardware virtualization if possible while it is not set explicitly
-if [[ -z "$IRONIC_VM_ENGINE" ]]; then
+if [[ "$IRONIC_VM_ENGINE" == "auto" ]]; then
     sudo modprobe kvm || true
     if [ ! -e /dev/kvm ]; then
         echo "WARNING: Switching to QEMU"
